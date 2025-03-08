@@ -8,13 +8,12 @@
     <style>
         body { font-family: Arial, sans-serif; }
         .task-container { max-width: 600px; margin: auto; text-align: center; }
-        .task { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #ddd; }
+        .task { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #ddd; align-items: center; }
         .task button { background-color: red; color: white; border: none; padding: 5px; cursor: pointer; }
         .success, .error { padding: 10px; margin: 10px; display: none; }
         .success { background: green; color: white; }
         .error { background: red; color: white; }
-        .task-db { font-weight: bold; } 
-        .task-api { font-style: italic; color: gray; } 
+        .task-title { flex-grow: 1; text-align: left; }
     </style>
 </head>
 <body>
@@ -26,6 +25,7 @@
                 <option value="">Seleccionar estado</option>
             </select>
             <button id="listarPorEstado">Listar</button>
+            <button id="refreshTasks">Actualizar</button>
         </div>
 
         <br>
@@ -77,25 +77,22 @@
                     type: "GET",
                     dataType: "json",
                     success: function(response) {
-                        console.log("Tareas combinadas recibidas:", response);
+                        console.log("Tareas recibidas:", response);
+
                         if (!response.success || !Array.isArray(response.tareas)) {
                             showError("No se pudieron obtener las tareas.");
                             return;
                         }
 
-                        $("#taskList").html("");
+                        $("#taskList").html(""); 
 
                         response.tareas.forEach(task => {
                             let taskHTML = `
-                                <div class="task ${task.source === 'DB' ? 'task-db' : 'task-api'}">
-                                    <span>${task.title} <small>(${task.source})</small></span>
+                                <div class="task">
+                                    <span class="task-title">${task.title}</span>
+                                    <button onclick="deleteTask(${task.id})">Eliminar</button>
+                                </div>
                             `;
-                            if (task.source === "DB") {
-                                taskHTML += `<button onclick="deleteTask(${task.id})">Eliminar</button>`;
-                            }
-
-                            taskHTML += `</div>`;
-
                             $("#taskList").append(taskHTML);
                         });
 
@@ -110,6 +107,9 @@
                 let estadoId = $("#estadoSelect").val();
                 loadTasks(estadoId);
             });
+            $("#refreshTasks").click(function() {
+                loadTasks();
+            });
             $("#addTask").click(function() {
                 let title = $("#taskTitle").val().trim();
 
@@ -121,17 +121,17 @@
                 console.log("Enviando datos:", { title: title });
 
                 $.ajax({
-                    url: "/api/tareas", 
+                    url: "/api/tareas",
                     type: "POST",
                     contentType: "application/json",
                     dataType: "json",
-                    data: JSON.stringify({ title: title }), 
+                    data: JSON.stringify({ title: title }),
                 })
                 .done(function(response) {
-                    console.log("Respuesta de la API:", response);
+                    console.log("Respuesta al agregar tarea:", response);
                     if (response.success) {
                         showMessage("Tarea agregada correctamente.");
-                        $("#taskTitle").val("");
+                        $("#taskTitle").val(""); 
                         loadTasks();
                     } else {
                         showError(response.error || "No se pudo agregar la tarea.");
