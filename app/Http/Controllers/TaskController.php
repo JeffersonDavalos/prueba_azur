@@ -23,34 +23,23 @@ class TaskController extends Controller
     public function getTasks(): JsonResponse
     {
         try {
-            // Obtener tareas desde la API externa
             $response = Http::get('https://jsonplaceholder.typicode.com/todos');
             $tareasExternas = $response->successful() ? $response->json() : [];
-    
-            // Obtener tareas desde la base de datos
             $tareasInternas = $this->taskService->obtenertareas();
-    
-            // Verificar si hubo un error en la base de datos
             if (!$tareasInternas->getData()->success) {
                 return response()->json([
                     'success' => false,
                     'error'   => 'Error al obtener las tareas internas'
                 ], 500);
             }
-    
-            // Obtener solo los datos de tareas de la base de datos
             $tareasInternasData = $tareasInternas->getData()->data;
-    
-            // Agregar un indicador de origen para diferenciar tareas
             foreach ($tareasInternasData as &$tarea) {
-                $tarea->source = "DB"; // Marcamos las tareas de la base de datos
+                $tarea->source = "DB"; 
             }
     
             foreach ($tareasExternas as &$tarea) {
-                $tarea['source'] = "API"; // Marcamos las tareas de la API externa
+                $tarea['source'] = "API"; 
             }
-    
-            // Combinar ambas listas en un solo array
             $tareasCombinadas = array_merge($tareasInternasData, $tareasExternas);
     
             return response()->json([
